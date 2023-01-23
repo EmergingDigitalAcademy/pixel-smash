@@ -1,5 +1,4 @@
 const crypto = require('crypto');
-const chalk = require('chalk');
 const { drawPlus, makeItRainbow, makeItSnow } = require('./draw-utils');
 const allGames = {};
 
@@ -8,6 +7,7 @@ const GAME_STATUSES = {
    FINISHED: 'FINISHED'
 }
 
+// initialize a new game state object
 const newGame = ({ size = 5, version = '1.0', colors = 16 } = {}) => {
    let pixels = [];
    for (let x = 0; x < size; x++) {
@@ -17,9 +17,9 @@ const newGame = ({ size = 5, version = '1.0', colors = 16 } = {}) => {
             x,
             y,
             state: {
-               color: 0,  // general state of the pixel
-               status: '', // arbitrary meta data field
-               owner: null, // arbitrary owner of this pixel
+               color: 0,      // general state of the pixel
+               status: '',    // arbitrary meta data field
+               owner: null,   // arbitrary owner of this pixel
             }
          })
       }
@@ -44,15 +44,19 @@ const newGame = ({ size = 5, version = '1.0', colors = 16 } = {}) => {
             state.color = 0;
          }
 
+         // ensure that pixel color remains in valid range
          state.color = Math.max(0, state.color);
          state.color = Math.min(colors - 1, state.color);
 
+         // set the pixel state, preserving any unmodified keys
          this.pixels[x][y].state = {
             ...this.pixels[x][y].state,
             ...state,
          }
       },
       print: function () {
+         const chalk = require('chalk');
+         // simple console print
          let colors = ['bgRed', 'bgGreen', 'bgBlue', 'bgMagenta', 'bgYellow', 'bgCyan', 'bgGrey']
          for (let x = 0; x < this.pixels.length; x++) {
             for (let y = 0; y < this.pixels.length; y++) {
@@ -64,12 +68,15 @@ const newGame = ({ size = 5, version = '1.0', colors = 16 } = {}) => {
             process.stdout.write('\n');
          }
       },
-      loop: function (cb) {
+      loop: function(cb) {
          for (let x = 0; x < this.pixels.length; x++) {
             for (let y = 0; y < this.pixels[x].length; y++) {
                cb(x, y);
             }
          }
+      },
+      getState: function() {
+         return JSON.parse(JSON.stringify(this));
       }
    }
 };
