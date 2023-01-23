@@ -69,6 +69,7 @@ const newGame = ({ width = 5, height, version = '1.0', colors = 16 } = {}) => {
             process.stdout.write('\n');
          }
       },
+      // a simple loop that calls a callback function on every pixel
       loop: function(cb) {
          for (let x = 0; x < this.height; x++) {
             for (let y = 0; y < this.width; y++) {

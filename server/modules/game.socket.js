@@ -1,5 +1,5 @@
 const http = require('http');
-const { Server } = require('socket.io');
+const { Server } = require('socket.io')
 const { makeItSnow, makeItRainbow } = require('./draw-utils');
 let { allGames, initializeGame } = require('./game-utils');
 const gameRouter = require('express').Router();
@@ -48,9 +48,9 @@ gameRouter.delete('/:id', (req, res) => {
 
 // Socket.io setup and server builder
 const socketServerBuilder = (app) => {
+   // allow all origin clients (sorry cors)
    const server = http.createServer(app);
-   const io = new Server(server);
-
+   const io = new Server(server, { cors: { origin: '*' } });
    io.on('connection', socket => {
       // for now, if there is no gameid specified, default to the first game
       let { gameId } = socket.handshake.query;
