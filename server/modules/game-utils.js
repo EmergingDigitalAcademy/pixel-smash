@@ -76,6 +76,7 @@ const newGame = ({ size = 5, version = '1.0', colors = 16 } = {}) => {
          }
       },
       getState: function() {
+         // returns a serializable json object from this game state
          return JSON.parse(JSON.stringify(this));
       }
    }
@@ -103,6 +104,7 @@ const test = () => {
    console.log('');
    makeItRainbow(game);
    game.print();
+
    return game;
 }
 

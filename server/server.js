@@ -11,7 +11,7 @@ app.use(express.json()); // enables accepting content-type application/json
 app.use(express.static("build/")); // serve out anything you find in the build/ folder (used in production/heroku)
 
 // HTTP Routes
-app.use('/pixel', require('./routes/pixel.router'));
+// app.use('/pixel', require('./routes/pixel.router'));
 
 // Socket.io stuff - return an http server with sockets enabled
 const server = socketServerBuilder(app);
