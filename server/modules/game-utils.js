@@ -8,7 +8,7 @@ const GAME_STATUSES = {
 }
 
 // initialize a new game state object
-const newGame = ({ width = 5, height, version = '1.0', colors = 16 } = {}) => {
+const newGame = ({ width = 5, height, version = '1.0', colors = 16, physics={ engine: 'normal' } } = {}) => {
    let pixels = [];
    if (!height) height = width; // default to square
    for (let x = 0; x < height; x++) {
@@ -27,7 +27,7 @@ const newGame = ({ width = 5, height, version = '1.0', colors = 16 } = {}) => {
       pixels.push(row);
    }
    return {
-      width, height, pixels, version, colors,
+      width, height, pixels, version, colors, physics,
       id: crypto.randomUUID(),
       status: GAME_STATUSES.ACTIVE,
       setPixel: function ({ x, y, state = {} } = {}) {

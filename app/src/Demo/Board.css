@@ -10,13 +10,27 @@
   box-sizing: border-box;
   font-size: 12px;
   text-align: center;
-  /* transition: background-color 2s ease-in; */
+  transition: background-color 2s ease-in;
 }
 
 .demo-board .status {
+  right: 0px;
+}
+
+.demo-board .reset {
+  left: 0px;
+}
+
+.demo-board .reset button {
+  cursor: pointer;
+  background-color: black;
+  color: white;
+  border: none;
+}
+
+.demo-board .reset, .demo-board .status {
   position: fixed;
   bottom: 0px;
-  right: 0px;
   margin: 0px;
   font-size: 12px;
   background-color: black;

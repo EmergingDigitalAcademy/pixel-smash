@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import './Board.css';
 import { io } from 'socket.io-client';
-const socket = io();
 
 function App() {
-  const [connected, setConnected] = useState(socket.connected);
+  const [connected, setConnected] = useState(false);
   const [gameState, setGameState] = useState({});
-  // console.log(gameState);
+  const [socket, setSocket] = useState(null);
+
   useEffect(() => {
-    // set up socket.io
+    const socket = io();
+    setSocket(socket);
+
     socket.on('connect', () => {
       setConnected(true);
     })
@@ -21,18 +23,24 @@ function App() {
       console.error('Disconnected from web socket');
       setConnected(false);
     })
+
+    // Clean up the socket after we leave the page
+    return () => socket.disconnect()
   }, []);
 
-  // const offset = Math.random() * 360; // color selection (random point on the color wheel)
-  const scale = Math.random() * 50 + 50; // variation of color (how wide of a band)
-  // const scale = 360;
+  // const offset = Math.random() * 360; // how wide of a band
+  // const scale = Math.random() * 50 + 50; // starting color
+  const scale = 100;
   const offset = 200;
-
-  console.log('rendering');
 
   return (
     <main className="demo-board">
-      <h2 className='status'>{connected ? 'connected' : 'not connected'}</h2>
+      <h2 className='status'>
+        {connected ? 'connected' : 'not connected'}
+      </h2>
+      <h2 className='reset'>
+        <button onClick={() => socket.emit('reset-game')}>reset</button>
+      </h2>
       <div className='pixel-container'>
         {gameState.pixels &&
           gameState.pixels.map((row, index) => (
@@ -41,7 +49,7 @@ function App() {
                 <div
                   key={`${pixel.x}-${pixel.y}`}
                   className={`pixel color-${pixel.state.color}`}
-                  style={{ 
+                  style={{
                     width: `${100 / gameState.width}%`,
                     paddingBottom: `${100 / gameState.width}%`,
                     backgroundColor: `hsl(${(pixel.state.color / gameState.colors) * scale + offset}, 100%, 50%)`

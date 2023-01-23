@@ -29,7 +29,7 @@ const makeItSnow = (game, probability = 1.0) => {
    )
 }
 
-const resetColors = (game) => game.loop((x,y) => game.setPixel({ x, y, state: { color: 0}}))
+const resetColors = (game) => game.loop((x,y) => game.setPixel({ x, y, state: { color: 0, owner: null}}))
 
 const makeItRainbow = (game) => (
    game.loop((x, y) => game.setPixel(

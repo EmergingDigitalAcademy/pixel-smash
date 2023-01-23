@@ -1,56 +1,60 @@
 const http = require('http');
 const { Server } = require('socket.io')
-const { makeItSnow, makeItRainbow } = require('./draw-utils');
+const { makeItSnow, makeItRainbow, resetColors } = require('./draw-utils');
 let { allGames, initializeGame } = require('./game-utils');
 const gameRouter = require('express').Router();
-
-// Express Router Setup for Games Endpoint
-// GET /games/ to get an array of game objects (with pixel state stripped)
-gameRouter.get('/', (req, res) => {
-   res.send(Object.keys(allGames).reduce(
-      (result, current) => [
-         ...result,
-         {
-            id: allGames[current].id,
-            height: allGames[current].height,
-            width: allGames[current].width,
-            colors: allGames[current].colors,
-            version: allGames[current].version
-         }
-      ]
-      , []));
-})
-
-// POST /game/ to create a new game
-gameRouter.post('/', (req, res) => {
-   const { width, height, colors, physics } = req.body;
-   const newGame = initializeGame({width, height, colors});
-
-   if (physics.engine) {
-      setInterval(() => {
-         if (physics.engine === 'snow') {
-            makeItSnow(newGame);
-         } else if (physics.engine === 'rainbow') {
-            makeItRainbow(newGame);
-         }
-      }, physics.interval || 5000)
-   }
-   res.status(201).send({
-      id: newGame.id
-   });
-});
-
-// DELETE /game/:id to delete a game by id
-gameRouter.delete('/:id', (req, res) => {
-   delete allGames[req.params.id];
-   res.sendStatus(204)
-})
 
 // Socket.io setup and server builder
 const socketServerBuilder = (app) => {
    // allow all origin clients (sorry cors)
    const server = http.createServer(app);
    const io = new Server(server, { cors: { origin: '*' } });
+
+   // Express Router Setup for Games Endpoint
+   // GET /games/ to get an array of game objects (with pixel state stripped)
+   gameRouter.get('/', (req, res) => {
+      res.send(Object.keys(allGames).reduce(
+         (result, current) => [
+            ...result,
+            {
+               id: allGames[current].id,
+               height: allGames[current].height,
+               width: allGames[current].width,
+               colors: allGames[current].colors,
+               version: allGames[current].version,
+               physics: allGames[current].physics
+            }
+         ], []));
+   })
+
+   // POST /game/ to create a new game
+   gameRouter.post('/', (req, res) => {
+      const { width, height, colors, physics = {} } = req.body;
+      const newGame = initializeGame({ width, height, colors, physics });
+
+      if (physics.engine) {
+         setInterval(() => {
+            if (physics.engine === 'snow') {
+               makeItSnow(newGame, physics.probability);
+            } else if (physics.engine === 'rainbow') {
+               makeItRainbow(newGame);
+            }
+            let game = allGames[newGame.id]; // just in case reference changes
+            io.to(game.id).emit('game-state', newGame);
+         }, physics.interval || 5000)
+      }
+
+      res.status(201).send({
+         id: newGame.id
+      });
+   });
+
+   // DELETE /game/:id to delete a game by id
+   gameRouter.delete('/:id', (req, res) => {
+      delete allGames[req.params.id];
+      res.sendStatus(204);
+   })
+
    io.on('connection', socket => {
       // for now, if there is no gameid specified, default to the first game
       let { gameId } = socket.handshake.query;
@@ -66,11 +70,17 @@ const socketServerBuilder = (app) => {
       const userId = socket.id; // for now, until socket identifies itself as a real user
 
       console.log(`Socket ${userId} connected to game ${gameId}`);
-      socket.join(gameId); // join the game room
-      // send initial game state
+      
+      // join game room and send initial game state
+      socket.join(gameId);
       io.to(socket.id).emit('game-state', thisGame);
 
       socket.on('request-state', (data) => {
+         io.to(socket.id).emit('game-state', thisGame);
+      })
+
+      socket.on('reset-game', (data) => {
+         resetColors(thisGame);
          io.to(socket.id).emit('game-state', thisGame);
       })
 
