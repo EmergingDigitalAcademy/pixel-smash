@@ -110,7 +110,7 @@ const socketServerBuilder = (app) => {
    // Wire up the games router to the express app we received
    app.use('/game/', gameRouter);
 
-   const newGame = initializeGame({size: 50, colors: 256}); // create a single game to start with
+   const newGame = initializeGame({size: 20, colors: 256}); // create a single game to start with
    // newGame.print();
    setInterval(() => {
       makeItSnow(newGame);

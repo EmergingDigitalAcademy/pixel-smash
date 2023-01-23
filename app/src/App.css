@@ -5,7 +5,7 @@ body {
 
 .pixel-container {
   margin: 0 auto;
-  width: 40%;
+  width: 80%;
   font-size: 0px;
 }
 
@@ -15,7 +15,7 @@ body {
   box-sizing: border-box;
   font-size: 12px;
   text-align: center;
-  transition: background-color 10s linear;
+  transition: background-color 5s linear;
 }
 
 .status {

@@ -25,6 +25,7 @@ function App() {
 
   const offset = Math.random() * 360;
   const scale = Math.random() * 50+50;
+  // const scale = 360;
 
   return (
     <main>
