@@ -23,8 +23,11 @@ gameRouter.get('/', (req, res) => {
 
 // POST /game/ to create a new game
 gameRouter.post('/', (req, res) => {
-   const newGame = initializeGame();
-   res.status(201).send(newGame);
+   const { width, height, colors } = req.body;
+   const newGame = initializeGame({width, height, colors});
+   res.status(201).send({
+      id: newGame.id
+   });
 });
 
 // DELETE /game/:id to delete a game by id
@@ -34,8 +37,6 @@ gameRouter.delete('/:id', (req, res) => {
 })
 
 // Socket.io setup and server builder
-// `ehlo` - sends a welcome message
-// `game-state` - 
 const socketServerBuilder = (app) => {
    const server = http.createServer(app);
    const io = new Server(server);
