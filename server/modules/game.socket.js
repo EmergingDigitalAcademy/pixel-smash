@@ -41,9 +41,8 @@ const socketServerBuilder = (app) => {
    io.on('connection', socket => {
       // for now, if there is no gameid specified, default to the first game
       let { gameId } = socket.handshake.query;
-      let userId = socket.id; // for now, until socket identifies itself as a real user
       if (gameId === undefined || allGames[gameId] === undefined) gameId = Object.keys(allGames)[0];
-
+      
       if (!gameId) {
          console.log(`Socket ${socket.id} connected but being dropped due to invalid game id`);
          io.to(socket.id).emit('error', { message: 'invalid game id and no default game available to join' });
@@ -51,17 +50,15 @@ const socketServerBuilder = (app) => {
          return;
       }
       const thisGame = allGames[gameId];
-      console.log(`Socket ${socket.id} connected to game ${gameId}`);
-      socket.join(gameId); // room for just the game
+      const userId = socket.id; // for now, until socket identifies itself as a real user
 
-      // io.to(socket.id).emit('game-state', allGames[gameId]);
+      console.log(`Socket ${userId} connected to game ${gameId}`);
+      socket.join(gameId); // join the game room
+      // send initial game state
+      io.to(socket.id).emit('game-state', thisGame);
 
       socket.on('request-state', (data) => {
          io.to(socket.id).emit('game-state', thisGame);
-      })
-
-      socket.on('debug', (data) => {
-         thisGame.print();
       })
 
       socket.on('set-pixel', (data) => {
@@ -100,29 +97,20 @@ const socketServerBuilder = (app) => {
          io.to(gameId).emit('game-state', thisGame);
       })
 
-      // io.to(socket.id).emit('welcome', 'we are glad you are here');
-      // socket.on("ping", () => {
-      //    console.log('pong');
-      //    io.emit('msg');
-      // });
+      socket.on('debug', (data) => {
+         thisGame.print();
+      })
 
-      // socket.on("message", (data) => {
-      //    console.log(data);
-      // });
-
-      //    setInterval(() => {
-      //       io.to('general').emit('msg', { data: 'general?' });
-      //   }, 1000);
-
-      setInterval(() => {
-         io.emit('msg', { data: 'msg' });
-      }, 5000);
+      // setInterval(() => {
+      //    io.emit('msg', { data: 'msg' });
+      // }, 5000);
    });
 
    // Wire up the games router to the express app we received
    app.use('/game/', gameRouter);
 
-   initializeGame(); // create a single game to start with
+   const newGame = initializeGame({size: 5}); // create a single game to start with
+   newGame.print();
 
    return server;
 }
