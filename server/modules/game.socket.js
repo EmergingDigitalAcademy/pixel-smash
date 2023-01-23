@@ -8,15 +8,15 @@ const gameRouter = require('express').Router();
 gameRouter.get('/', (req, res) => {
    res.send(Object.keys(allGames).reduce(
       (result, current) => [
-         ...result, 
-         { 
+         ...result,
+         {
             id: allGames[current].id,
             size: allGames[current].size,
             colors: allGames[current].colors,
             version: allGames[current].version
          }
       ]
-   , []));
+      , []));
 })
 
 // POST /game/ to create a new game
@@ -32,21 +32,83 @@ gameRouter.delete('/:id', (req, res) => {
 })
 
 // Socket.io setup and server builder
+// `ehlo` - sends a welcome message
+// `game-state` - 
 const socketServerBuilder = (app) => {
    const server = http.createServer(app);
    const io = new Server(server);
+
    io.on('connection', socket => {
-      console.log('connected', socket.handshake);
-      socket.join('general'); // this is a server-only concept
+      // for now, if there is no gameid specified, default to the first game
+      let { gameId } = socket.handshake.query;
+      let userId = socket.id; // for now, until socket identifies itself as a real user
+      if (gameId === undefined || allGames[gameId] === undefined) gameId = Object.keys(allGames)[0];
 
-      socket.on("ping", () => {
-         console.log('pong');
-         io.emit('msg');
-      });
+      if (!gameId) {
+         console.log(`Socket ${socket.id} connected but being dropped due to invalid game id`);
+         io.to(socket.id).emit('error', { message: 'invalid game id and no default game available to join' });
+         socket.disconnect();
+         return;
+      }
+      const thisGame = allGames[gameId];
+      console.log(`Socket ${socket.id} connected to game ${gameId}`);
+      socket.join(gameId); // room for just the game
 
-      socket.on("message", (data) => {
+      // io.to(socket.id).emit('game-state', allGames[gameId]);
+
+      socket.on('request-state', (data) => {
+         io.to(socket.id).emit('game-state', thisGame);
+      })
+
+      socket.on('debug', (data) => {
+         thisGame.print();
+      })
+
+      socket.on('set-pixel', (data) => {
+         if (typeof (data) !== 'object') return; // dont parse strings gross
          console.log(data);
-      });
+
+         let pixels = [];
+         if (data.length === undefined && (
+            data.x !== undefined &&
+            data.y !== undefined &&
+            data.state?.color !== undefined)
+         ) {
+            // its a valid pixel object
+            pixels = [data];
+         } else {
+            // its an array of pixels
+            pixels = data;
+         }
+
+         // process each pixel
+         for (let pixel of pixels) {
+            try {
+               thisGame.setPixel({
+                  x: pixel.x,
+                  y: pixel.y,
+                  state: {
+                     ...pixel.state,
+                     owner: userId,
+                  }
+               });
+            } catch (err) {
+               console.log(err);
+            }
+         }
+         // broadcast the new game state
+         io.to(gameId).emit('game-state', thisGame);
+      })
+
+      // io.to(socket.id).emit('welcome', 'we are glad you are here');
+      // socket.on("ping", () => {
+      //    console.log('pong');
+      //    io.emit('msg');
+      // });
+
+      // socket.on("message", (data) => {
+      //    console.log(data);
+      // });
 
       //    setInterval(() => {
       //       io.to('general').emit('msg', { data: 'general?' });
@@ -59,6 +121,8 @@ const socketServerBuilder = (app) => {
 
    // Wire up the games router to the express app we received
    app.use('/game/', gameRouter);
+
+   initializeGame(); // create a single game to start with
 
    return server;
 }

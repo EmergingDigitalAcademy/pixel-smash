@@ -74,10 +74,6 @@ const newGame = ({ size = 5, version = '1.0', colors = 16 } = {}) => {
                cb(x, y);
             }
          }
-      },
-      getState: function() {
-         // returns a serializable json object from this game state
-         return JSON.parse(JSON.stringify(this));
       }
    }
 };
