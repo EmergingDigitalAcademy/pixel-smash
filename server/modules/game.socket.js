@@ -1,5 +1,6 @@
 const http = require('http');
 const { Server } = require('socket.io');
+const { makeItSnow, makeItRainbow } = require('./draw-utils');
 let { allGames, initializeGame } = require('./game-utils');
 const gameRouter = require('express').Router();
 
@@ -109,8 +110,13 @@ const socketServerBuilder = (app) => {
    // Wire up the games router to the express app we received
    app.use('/game/', gameRouter);
 
-   const newGame = initializeGame({size: 5}); // create a single game to start with
-   newGame.print();
+   const newGame = initializeGame({size: 50, colors: 256}); // create a single game to start with
+   // newGame.print();
+   setInterval(() => {
+      makeItSnow(newGame);
+      // makeItRainbow(newGame);
+      io.to(newGame.id).emit('game-state', newGame);
+   }, 5000);
 
    return server;
 }
