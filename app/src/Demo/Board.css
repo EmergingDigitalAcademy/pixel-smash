@@ -10,7 +10,7 @@
   box-sizing: border-box;
   font-size: 12px;
   text-align: center;
-  transition: background-color 2s ease-in;
+  /* transition: background-color 2s ease-in; */
 }
 
 .demo-board .status {

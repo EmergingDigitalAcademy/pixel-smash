@@ -23,8 +23,18 @@ gameRouter.get('/', (req, res) => {
 
 // POST /game/ to create a new game
 gameRouter.post('/', (req, res) => {
-   const { width, height, colors } = req.body;
+   const { width, height, colors, physics } = req.body;
    const newGame = initializeGame({width, height, colors});
+
+   if (physics.engine) {
+      setInterval(() => {
+         if (physics.engine === 'snow') {
+            makeItSnow(newGame);
+         } else if (physics.engine === 'rainbow') {
+            makeItRainbow(newGame);
+         }
+      }, physics.interval || 5000)
+   }
    res.status(201).send({
       id: newGame.id
    });
@@ -112,13 +122,13 @@ const socketServerBuilder = (app) => {
    // Wire up the games router to the express app we received
    app.use('/game/', gameRouter);
 
-   const newGame = initializeGame({ width: 50, height: 30, colors: 3 }); // create a single game to start with
+   const newGame = initializeGame({ width: 50, height: 30, colors: 30 }); // create a single game to start with
    // newGame.print();
    setInterval(() => {
-      makeItSnow(newGame);
+      makeItSnow(newGame, .01);
       // makeItRainbow(newGame);
       io.to(newGame.id).emit('game-state', newGame);
-   }, 5000);
+   }, 1000);
 
    return server;
 }

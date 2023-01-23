@@ -23,9 +23,10 @@ function App() {
     })
   }, []);
 
-  const offset = Math.random() * 360; // color selection (random point on the color wheel)
-  const scale = Math.random() * 50+100; // variation of color (how wide of a band)
+  // const offset = Math.random() * 360; // color selection (random point on the color wheel)
+  const scale = Math.random() * 50 + 50; // variation of color (how wide of a band)
   // const scale = 360;
+  const offset = 200;
 
   console.log('rendering');
 

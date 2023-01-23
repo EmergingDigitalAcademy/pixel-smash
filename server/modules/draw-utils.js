@@ -20,10 +20,10 @@ const drawPlus = (game) => {
    }
 }
 
-const makeItSnow = (game) => {
+const makeItSnow = (game, probability = 1.0) => {
    game.loop((x, y) => game.setPixel({
       x, y, state: {
-         color: crypto.randomInt(game.colors)
+         color: (Math.random() < probability) ? crypto.randomInt(game.colors) : game.pixels[x][y].state.color
       }
    })
    )
