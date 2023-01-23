@@ -44,7 +44,7 @@ const socketServerBuilder = (app) => {
       // for now, if there is no gameid specified, default to the first game
       let { gameId } = socket.handshake.query;
       if (gameId === undefined || allGames[gameId] === undefined) gameId = Object.keys(allGames)[0];
-      
+
       if (!gameId) {
          console.log(`Socket ${socket.id} connected but being dropped due to invalid game id`);
          io.to(socket.id).emit('error', { message: 'invalid game id and no default game available to join' });
@@ -111,7 +111,7 @@ const socketServerBuilder = (app) => {
    // Wire up the games router to the express app we received
    app.use('/game/', gameRouter);
 
-   const newGame = initializeGame({width: 50, height: 30, colors: 256}); // create a single game to start with
+   const newGame = initializeGame({ width: 50, height: 30, colors: 3 }); // create a single game to start with
    // newGame.print();
    setInterval(() => {
       makeItSnow(newGame);
