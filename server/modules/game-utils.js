@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { drawPlus, makeItRainbow, makeItSnow } = require('./draw-utils');
+const { drawPlus, makeItRainbow, makeItSnow, resetColors } = require('./draw-utils');
 const allGames = {};
 
 const GAME_STATUSES = {
@@ -8,11 +8,12 @@ const GAME_STATUSES = {
 }
 
 // initialize a new game state object
-const newGame = ({ size = 5, version = '1.0', colors = 16 } = {}) => {
+const newGame = ({ width = 5, height, version = '1.0', colors = 16 } = {}) => {
    let pixels = [];
-   for (let x = 0; x < size; x++) {
+   if (!height) height = width; // default to square
+   for (let x = 0; x < height; x++) {
       let row = [];
-      for (let y = 0; y < size; y++) {
+      for (let y = 0; y < width; y++) {
          row.push({
             x,
             y,
@@ -26,7 +27,7 @@ const newGame = ({ size = 5, version = '1.0', colors = 16 } = {}) => {
       pixels.push(row);
    }
    return {
-      size, pixels, version, colors,
+      width, height, pixels, version, colors,
       id: crypto.randomUUID(),
       status: GAME_STATUSES.ACTIVE,
       setPixel: function ({ x, y, state = {} } = {}) {
@@ -35,9 +36,9 @@ const newGame = ({ size = 5, version = '1.0', colors = 16 } = {}) => {
             throw `Invalid x/y coords ${x} ${y}`;
          }
          x = Math.max(0, x);
-         x = Math.min(size - 1, x);
+         x = Math.min(height - 1, x);
          y = Math.max(0, y);
-         y = Math.min(size - 1, y);
+         y = Math.min(width - 1, y);
 
          if (isNaN(state.color)) {
             // reset back to empty state?
@@ -58,8 +59,8 @@ const newGame = ({ size = 5, version = '1.0', colors = 16 } = {}) => {
          const chalk = require('chalk');
          // simple console print
          let colors = ['bgRed', 'bgGreen', 'bgBlue', 'bgMagenta', 'bgYellow', 'bgCyan', 'bgGrey']
-         for (let x = 0; x < this.pixels.length; x++) {
-            for (let y = 0; y < this.pixels.length; y++) {
+         for (let x = 0; x < this.height; x++) {
+            for (let y = 0; y < this.width; y++) {
                // console.log(this.pixels[x][y].state.color)
                let c = this.pixels[x][y].state.color % (colors.length);
                let currentColor = this.pixels[x][y].state.color.toString().padStart(2);
@@ -69,8 +70,8 @@ const newGame = ({ size = 5, version = '1.0', colors = 16 } = {}) => {
          }
       },
       loop: function(cb) {
-         for (let x = 0; x < this.pixels.length; x++) {
-            for (let y = 0; y < this.pixels[x].length; y++) {
+         for (let x = 0; x < this.height; x++) {
+            for (let y = 0; y < this.width; y++) {
                cb(x, y);
             }
          }
@@ -87,7 +88,7 @@ const initializeGame = (config) => {
 
 const test = () => {
    // initialize a game and draw some patterns
-   let game = newGame({ size: 15 });
+   let game = newGame({ width: 5, colors: 32 });
 
    drawPlus(game);
    drawPlus(game);
@@ -97,6 +98,10 @@ const test = () => {
    makeItSnow(game);
    game.print();
 
+   console.log('');
+   resetColors(game);
+   makeItRainbow(game);
+   game.print();
    console.log('');
    makeItRainbow(game);
    game.print();

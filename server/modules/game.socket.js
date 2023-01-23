@@ -12,7 +12,8 @@ gameRouter.get('/', (req, res) => {
          ...result,
          {
             id: allGames[current].id,
-            size: allGames[current].size,
+            height: allGames[current].height,
+            width: allGames[current].width,
             colors: allGames[current].colors,
             version: allGames[current].version
          }
@@ -110,7 +111,7 @@ const socketServerBuilder = (app) => {
    // Wire up the games router to the express app we received
    app.use('/game/', gameRouter);
 
-   const newGame = initializeGame({size: 20, colors: 256}); // create a single game to start with
+   const newGame = initializeGame({width: 50, height: 30, colors: 256}); // create a single game to start with
    // newGame.print();
    setInterval(() => {
       makeItSnow(newGame);
