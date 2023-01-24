@@ -2,11 +2,11 @@ import Demo from '../Demo/Board';
 import GamesList from '../GameSelector/GamesList';
 import Game from '../GameSelector/Game';
 import './App.css';
-import { BrowserRouter, Switch, Route } from 'react-router-dom'
+import { HashRouter, Switch, Route } from 'react-router-dom'
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Switch>
         <Route path="/demo">
           <Demo />
@@ -21,7 +21,7 @@ function App() {
         </Route>
       </Switch>
 
-    </BrowserRouter>
+    </HashRouter>
   )
 }
 

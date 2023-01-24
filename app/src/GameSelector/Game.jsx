@@ -5,7 +5,7 @@ import './Game.css';
 import Pixel from './Pixel';
 
 // connect to game server (by default on localhost)
-const GAME_SERVER_URL = 'http://localhost:5000/';
+const GAME_SERVER_URL = window.location.host;
 
 function Game() {
    const [connected, setConnected] = useState(false);
