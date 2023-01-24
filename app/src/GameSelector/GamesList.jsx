@@ -34,7 +34,7 @@ function GamesList() {
             <h1>Games List</h1>
          </header>
          <section>
-            <button onClick={() => newGame()}>New Game</button>
+            <button onClick={() => newGame({width: 50, height: 20, colors: 64})}>New Game</button>
             <button onClick={() => newGame({ physics: { engine: 'rainbow', interval: 500 }, width: 50, height: 20, colors: 5000 })}>New Rainbow</button>
             <button onClick={() => newGame({ physics: { engine: 'snow', probability: 0.01, interval: 2000 }, width: 50, height: 20 })}>Light Rain</button>
             <button onClick={() => newGame({ physics: { engine: 'snow', probability: 1.0, interval: 1000 }, width: 50, height: 20 })}>Chaotic</button>

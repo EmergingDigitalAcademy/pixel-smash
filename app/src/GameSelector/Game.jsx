@@ -10,12 +10,15 @@ const GAME_SERVER_URL = 'http://localhost:5000/';
 function Game() {
    const [connected, setConnected] = useState(false);
    const [gameState, setGameState] = useState({});
+   const [socket, setSocket] = useState(null);
+
    const params = useParams();
    const { gameId } = params;
 
    useEffect(() => {
       const socket = io(GAME_SERVER_URL, {query: { gameId }});
-
+      setSocket(socket);
+      
       socket.on('connect', () => {
          setConnected(true);
       })
@@ -50,6 +53,7 @@ function Game() {
                      {row.map(pixel => (
                         <Pixel
                            key={`${pixel.x}-${pixel.y}-${pixel.state.color}`}
+                           socket={socket}
                            pixel={pixel}
                            gameState={gameState}
                            scale={scale}

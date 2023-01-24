@@ -20,3 +20,33 @@
       - Client can emit with acknowledgement (`socket.emit('question', (answer) => {...})`)
    - Reserved messages (that can be hooked into server-side):
       `connect`, `connect_error`, `disconnect`, `disconnecting`, `newListener`, `removeListener`
+
+## General Concepts
+   A board game is an object with meta data and pixels. The meta data contains info
+   like width, height, number of colors (states), unique id, and information on the
+   'physics' of the game (which right now consists of just some generic patterns)
+
+   A pixel is represented by a coordinate (x,y) and state object (color, owner)
+   `{x: 1, y: 1, state: {color: 2, owner: 'user-123'}}` for example. It is up to
+   the client to choose how to display the states in a suitable color palette.
+
+## Server Messages & Routes
+   - `POST /game/` will create a new game and return an object with the game id
+   - `GET /game/` will return an array of all current games
+   - `web socket connect to /` will automatically subscribe the socket to the game
+      identified with the query `gameId`, or default to the first game found if
+      there is no `gameId` in the query string.
+
+      Every update to the subscribed game will send the entire game state to
+      all connected clients.
+      - `game-state` will be dispatched by the server on every state change
+   
+The server accepts the following messages:
+   - `set-pixel` can accept a pixel or an array of pixels:
+      `{x, y, state: {color}}` or `[{}, {}, {}]`
+      `{x: 1, y: 1, state: {color: 5}}` will set pixel (1,1) to color 5
+   
+   - `set-phaser` accepts a phaser object which can be used to initiate a 'worm'
+      `{x, y, payload: [{x, y, color}, {x, y, color}]}` 
+         Each payload value is relative. So a value of {x: 1, y: 0, color: 2} will
+         increase x by 1, y by 0, and color by 2

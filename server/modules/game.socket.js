@@ -29,10 +29,10 @@ const socketServerBuilder = (app) => {
 
    // POST /game/ to create a new game
    gameRouter.post('/', (req, res) => {
-      const { width, height, colors, physics = {} } = req.body;
+      const { width, height, colors, physics } = req.body;
       const newGame = initializeGame({ width, height, colors, physics });
 
-      if (physics.engine) {
+      if (physics?.engine) {
          setInterval(() => {
             if (physics.engine === 'snow') {
                makeItSnow(newGame, physics.probability);
@@ -84,9 +84,26 @@ const socketServerBuilder = (app) => {
          io.to(socket.id).emit('game-state', thisGame);
       })
 
+      socket.on('set-phaser', (data) => {
+         // create a little phaser that moves around the board
+         // {x, y, payload: [{x1, y1, c1}, {x2, y2, c2}]}
+         const func = (phaser, energy) => {
+            let {x, y, payload} = phaser;
+            let current = payload.pop(); // +x, +y, +color
+            color = current.color || 0;
+            thisGame.setPixel({x, y, state: { color: thisGame.pixels[x][y].state.color + color }})
+            io.to(thisGame.id).emit('game-state', thisGame);
+            phaser.x += current.x;
+            phaser.y += current.y;
+            if (payload.length > 0 && energy > 0)
+               setTimeout(() => func(phaser, --energy), 250)
+         }
+         func(data, 20);
+      })
+
       socket.on('set-pixel', (data) => {
          if (typeof (data) !== 'object') return; // dont parse strings gross
-         console.log(data);
+         // console.log(data);
 
          let pixels = [];
          if (data.length === undefined && (

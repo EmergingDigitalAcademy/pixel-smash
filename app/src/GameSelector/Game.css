@@ -11,6 +11,7 @@
    font-size: 12px;
    text-align: center;
    /* transition: background-color 2s ease-in; */
+   user-select: none;
  }
  
  .game-board .status {
