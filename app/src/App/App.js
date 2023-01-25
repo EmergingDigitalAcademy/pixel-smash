@@ -1,6 +1,7 @@
 import Demo from '../Demo/Board';
 import GamesList from '../GameSelector/GamesList';
 import Game from '../GameSelector/Game';
+import Canvas from '../GameSelector/Canvas';
 import './App.css';
 import { HashRouter, Switch, Route } from 'react-router-dom'
 
@@ -14,6 +15,10 @@ function App() {
 
         <Route path="/game/:gameId">
           <Game />
+        </Route>
+
+        <Route path="/canvas/:gameId">
+          <Canvas />
         </Route>
 
         <Route path="/">
