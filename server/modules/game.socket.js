@@ -78,7 +78,7 @@ const socketServerBuilder = (app) => {
       // join game room and send initial game state
       socket.join(gameId);
       io.to(socket.id).emit('game-state', thisGame);
-      io.to(gameId).emit('chat', {from: 'server', message: 'welcome'})
+      io.to(gameId).emit('chat', { from: 'server', message: 'welcome' })
 
       socket.on('request-state', (data) => {
          io.to(socket.id).emit('game-state', thisGame);
@@ -105,7 +105,7 @@ const socketServerBuilder = (app) => {
                   setTimeout(() => func(phaser, --energy), 250)
             } catch (err) {
                // dont crash the server
-               
+
             }
          }
          func(data, 20);
@@ -147,8 +147,17 @@ const socketServerBuilder = (app) => {
          io.to(gameId).emit('game-state', thisGame);
       })
 
-      socket.on('chat', ({from, message}) => {
-         io.to(gameId).emit('chat', {from, message})
+      socket.on('chat', ({ from, message, to }) => {
+         try {
+            if (to) {
+               io.to(to).emit('chat', { from, message })
+            } else {
+               io.to(gameId).emit('chat', { from, message })
+            }
+         } catch (err) {
+            console.error('Error sending message', err);
+         }
+
       })
 
       socket.on('debug', (data) => {

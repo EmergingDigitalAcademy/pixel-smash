@@ -3,32 +3,26 @@
 ## References
    - Sequelize: https://github.com/EmergingDigitalAcademy/intro-to-fullstack-javascript
 
-## Socket.io high level concepts:
-   - Clients connect to a web socket to maintain a persistent connection with the server. 
-   - A 'message' can be emitted from the server to the client or the client to the server.
-   - A 'message' has an id and data. For example: `say-hello` message may contain `{"message": "hi there"}`
-      and this message will only be captured and processesd if the receiving end has a specific
-      listener to capture the message by id.
-   - Rooms are a server-only concept. They define which sockets to emit a message to.
-      - Server can emit to all connected clients (`io.emit(...)`)
-      - Server can emit to a single socket by socket (`io.to(socketid).emit(...)`)
-      - Server can emit to everyone except sender (`socket.broadcast.emit(...)`)
-      - Server can emit to a group of sockets (called a 'room') (`io.in('room1').emit(...)`)
-      - Server can emit to a group of sockets except sender (`socket.to('room1'.emit(...)`)
-      - Server can emit with acknowledgement (`socket.emit('question', (answer) => {...})`)
-      - Client can emit a message directly to the server (`socket.emit(...)`)
-      - Client can emit with acknowledgement (`socket.emit('question', (answer) => {...})`)
-   - Reserved messages (that can be hooked into server-side):
-      `connect`, `connect_error`, `disconnect`, `disconnecting`, `newListener`, `removeListener`
-
 ## General Concepts
    A board game is an object with meta data and pixels. The meta data contains info
    like width, height, number of colors (states), unique id, and information on the
    'physics' of the game (which right now consists of just some generic patterns)
 
    A pixel is represented by a coordinate (x,y) and state object (color, owner)
-   `{x: 1, y: 1, state: {color: 2, owner: 'user-123'}}` for example. It is up to
-   the client to choose how to display the states in a suitable color palette.
+   `{x: 1, y: 1, state: {color: 2, owner: 'user-123', status: ''}}` for example. 
+   It is up to the client to choose how to display the states in a suitable color palette.
+   The `owner` of a pixel is set to the socket ID (random unique id) and the
+   status is reserved for arbitrary meta data that is stored along side the pixel
+
+   There are many strategies to determine what color to draw for a given pixel state,
+   but the simplest is to divide the state by the number of colors to get a 
+   number between 0 and 1. Multiply this times 360 to get a color on the color wheel.
+   Pass this value to `hsl` to generate a proper color. 
+
+   Example: `hsl(${(pixel.state.color/game.colors)*360, 100%, 50%})`
+
+   Decreasing 360 to a smaller number, then offsetting it, will provide a more narrow
+   range of colors. `(pixel.state.color/game.colors)*50+150` would give a value between 150-200 for example (so a shade of green/dark blue)
 
 ## Server Messages & Routes
    - `POST /game/` will create a new game and return an object with the game id
@@ -112,6 +106,21 @@ The server accepts the following messages:
       - Host draws 4 boxes on the screen (3x3)
       - Clients click on a box to see if it is the correct box or a dud.
 
+   Grid Guesser:
+      - Host draws a big grid of state 1 pixels
+      - Client clicks a pixel to guess. Host changes guess to:
+         2 if the guess is wrong
+         3 if the guess is in the right row
+         4 if the guess is in the right column
+         5 if otherwise is within 40 pixels
+         6 if otherwise is within 10 pixels
+         10 if the guess was correct
+      - Pixel then resets after 1 second
+      - Guesses are tallied on the bottom of the screen
+      - The person who gets the final guess wins
+      - Guessers get +1 points for good guesses
+      - Winner gets 5 points for answer
+
    Puzzle Game:
       - Host designs some kind of puzzle and draws it on the board. 
       - Clients add a value to a pixel to activate the puzzle. Clicking
@@ -119,13 +128,16 @@ The server accepts the following messages:
          via cellular automata based rules
       - The goal is to get the puzzle into an end state with only one click
 
-   
-
    Controls:
       - Host can watch certain pixels for state change, and respond in a 
          kind of messaging system (set pixel 0,0 to '1' to reset game)
       - Host can maintain a game status by forcing a pixel to a state
          (1 for go, 2 for finished).
+      - Client/Host could even design a communication protocol, using
+         a specific area for sending messages / commands. Client sets
+         top two pixels for identify command, host receives, clears 
+         pixels, and executes the command. Host knows who sent the
+         command because of pixel ownership tag.
 
    Potential upgrades for the future:
       - Allowing clients to send 'draft' pixels for host review. This would
@@ -135,3 +147,20 @@ The server accepts the following messages:
       - Creation of a chat system so that host / clients can send text
          messages (like who 'won').
 
+## Socket.io high level concepts:
+   - Clients connect to a web socket to maintain a persistent connection with the server. 
+   - A 'message' can be emitted from the server to the client or the client to the server.
+   - A 'message' has an id and data. For example: `say-hello` message may contain `{"message": "hi there"}`
+      and this message will only be captured and processesd if the receiving end has a specific
+      listener to capture the message by id.
+   - Rooms are a server-only concept. They define which sockets to emit a message to.
+      - Server can emit to all connected clients (`io.emit(...)`)
+      - Server can emit to a single socket by socket (`io.to(socketid).emit(...)`)
+      - Server can emit to everyone except sender (`socket.broadcast.emit(...)`)
+      - Server can emit to a group of sockets (called a 'room') (`io.in('room1').emit(...)`)
+      - Server can emit to a group of sockets except sender (`socket.to('room1'.emit(...)`)
+      - Server can emit with acknowledgement (`socket.emit('question', (answer) => {...})`)
+      - Client can emit a message directly to the server (`socket.emit(...)`)
+      - Client can emit with acknowledgement (`socket.emit('question', (answer) => {...})`)
+   - Reserved messages (that can be hooked into server-side):
+      `connect`, `connect_error`, `disconnect`, `disconnecting`, `newListener`, `removeListener`
