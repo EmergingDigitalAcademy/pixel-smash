@@ -22,6 +22,10 @@ function Canvas() {
          setConnected(true);
       })
 
+      socket.on('chat', ({from, message}) => {
+         alert(message);
+      })
+
       socket.on('game-state', gameState => {
          setGameState(gameState);
       });

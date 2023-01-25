@@ -29,8 +29,8 @@ const socketServerBuilder = (app) => {
 
    // POST /game/ to create a new game
    gameRouter.post('/', (req, res) => {
-      const { width, height, colors, physics } = req.body;
-      const newGame = initializeGame({ width, height, colors, physics });
+      const { width, height, colors, physics, name } = req.body;
+      const newGame = initializeGame({ width, height, colors, physics, name });
 
       if (physics?.engine) {
          setInterval(() => {
@@ -78,6 +78,7 @@ const socketServerBuilder = (app) => {
       // join game room and send initial game state
       socket.join(gameId);
       io.to(socket.id).emit('game-state', thisGame);
+      io.to(gameId).emit('chat', {from: 'server', message: 'welcome'})
 
       socket.on('request-state', (data) => {
          io.to(socket.id).emit('game-state', thisGame);
@@ -144,6 +145,10 @@ const socketServerBuilder = (app) => {
          }
          // broadcast the new game state
          io.to(gameId).emit('game-state', thisGame);
+      })
+
+      socket.on('chat', ({from, message}) => {
+         io.to(gameId).emit('chat', {from, message})
       })
 
       socket.on('debug', (data) => {

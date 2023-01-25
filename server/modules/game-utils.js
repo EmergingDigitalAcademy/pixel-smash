@@ -8,7 +8,14 @@ const GAME_STATUSES = {
 }
 
 // initialize a new game state object
-const newGame = ({ width = 5, height, version = '1.0', colors = 16, physics={ engine: 'normal' } } = {}) => {
+const newGame = ({
+   width = 5,
+   height,
+   version = '1.0',
+   colors = 16,
+   name = 'new game',
+   physics = { engine: 'normal' }
+} = {}) => {
    let pixels = [];
    if (!height) height = width; // default to square
    for (let x = 0; x < height; x++) {
@@ -27,7 +34,7 @@ const newGame = ({ width = 5, height, version = '1.0', colors = 16, physics={ en
       pixels.push(row);
    }
    return {
-      width, height, pixels, version, colors, physics,
+      width, height, pixels, version, colors, physics, name,
       id: crypto.randomUUID(),
       status: GAME_STATUSES.ACTIVE,
       setPixel: function ({ x, y, state = {} } = {}) {
@@ -70,7 +77,7 @@ const newGame = ({ width = 5, height, version = '1.0', colors = 16, physics={ en
          }
       },
       // a simple loop that calls a callback function on every pixel
-      loop: function(cb) {
+      loop: function (cb) {
          for (let x = 0; x < this.height; x++) {
             for (let y = 0; y < this.width; y++) {
                cb(x, y);
