@@ -1,8 +1,5 @@
 # Pixel Smash
 
-## References
-   - Sequelize: https://github.com/EmergingDigitalAcademy/intro-to-fullstack-javascript
-
 ## General Concepts
    A board game is an object with meta data and pixels. The meta data contains info
    like width, height, number of colors (states), unique id, and information on the
