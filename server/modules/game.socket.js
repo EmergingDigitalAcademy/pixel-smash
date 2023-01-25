@@ -78,7 +78,7 @@ const socketServerBuilder = (app) => {
       // join game room and send initial game state
       socket.join(gameId);
       io.to(socket.id).emit('game-state', thisGame);
-      io.to(gameId).emit('chat', { from: 'server', message: 'welcome' })
+      io.to(socket.id).emit('chat', { from: 'server', message: 'welcome' })
 
       socket.on('request-state', (data) => {
          io.to(socket.id).emit('game-state', thisGame);
@@ -129,22 +129,28 @@ const socketServerBuilder = (app) => {
          }
 
          // process each pixel
-         for (let pixel of pixels) {
-            try {
-               thisGame.setPixel({
-                  x: pixel.x,
-                  y: pixel.y,
-                  state: {
-                     ...pixel.state,
-                     owner: userId,
-                  }
-               });
-            } catch (err) {
-               console.log(err);
+         try {
+
+            for (let pixel of pixels) {
+               try {
+                  thisGame.setPixel({
+                     x: pixel.x,
+                     y: pixel.y,
+                     state: {
+                        ...pixel.state,
+                        owner: userId,
+                     }
+                  });
+               } catch (err) {
+                  console.log(err);
+               }
             }
+            // broadcast the new game state
+            io.to(gameId).emit('game-state', thisGame);
+         } catch (err) {
+            console.log(err);
+            console.log(data);
          }
-         // broadcast the new game state
-         io.to(gameId).emit('game-state', thisGame);
       })
 
       socket.on('chat', ({ from, message, to }) => {
