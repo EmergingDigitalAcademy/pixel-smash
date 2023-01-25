@@ -60,8 +60,12 @@ The server accepts the following messages:
          Each payload value is relative. So a value of {x: 1, y: 0, color: 2} will
          increase x by 1, y by 0, and color by 2
    
-   - `chat` accepts a message `{from, message}` that will be sent to all connected
-      clients. Could be used for host messages.
+   - `chat` accepts a message `{to, from, message}` that will be sent to all connected
+      clients. Could be used for host messages. `to` is optional. If left off,
+      message is sent to all clients. Setting it to a socket id would have the
+      message sent directly to one client only (useful if host sends a message
+      to a specific socket id that was stored in a pixel).
+
 
 ## Ideas for implementations:
    - Paint brush: send pixel arrays on mouse drag
