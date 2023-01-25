@@ -1,6 +1,6 @@
 const http = require('http');
 const { Server } = require('socket.io')
-const { makeItSnow, makeItRainbow, resetColors } = require('./draw-utils');
+const { makeItSnow, makeItRainbow, resetColors, MakeItBlow, MakeItDecay } = require('./draw-utils');
 let { allGames, initializeGame } = require('./game-utils');
 const gameRouter = require('express').Router();
 
@@ -38,6 +38,10 @@ const socketServerBuilder = (app) => {
                makeItSnow(newGame, physics.probability);
             } else if (physics.engine === 'rainbow') {
                makeItRainbow(newGame);
+            } else if (physics.engine === 'wind') {
+               MakeItBlow(newGame);
+            } else if (physics.engine === 'decay') {
+               MakeItDecay(newGame);
             }
             let game = allGames[newGame.id]; // just in case reference changes
             io.to(game.id).emit('game-state', newGame);
@@ -70,7 +74,7 @@ const socketServerBuilder = (app) => {
       const userId = socket.id; // for now, until socket identifies itself as a real user
 
       console.log(`Socket ${userId} connected to game ${gameId}`);
-      
+
       // join game room and send initial game state
       socket.join(gameId);
       io.to(socket.id).emit('game-state', thisGame);
@@ -88,15 +92,20 @@ const socketServerBuilder = (app) => {
          // create a little phaser that moves around the board
          // {x, y, payload: [{x1, y1, c1}, {x2, y2, c2}]}
          const func = (phaser, energy) => {
-            let {x, y, payload} = phaser;
-            let current = payload.pop(); // +x, +y, +color
-            color = current.color || 0;
-            thisGame.setPixel({x, y, state: { color: thisGame.pixels[x][y].state.color + color }})
-            io.to(thisGame.id).emit('game-state', thisGame);
-            phaser.x += current.x;
-            phaser.y += current.y;
-            if (payload.length > 0 && energy > 0)
-               setTimeout(() => func(phaser, --energy), 250)
+            try {
+               let { x, y, payload } = phaser;
+               let current = payload.pop(); // +x, +y, +color
+               color = current.color || 0;
+               thisGame.setPixel({ x, y, state: { color: thisGame.pixels[x][y].state.color + color } })
+               io.to(thisGame.id).emit('game-state', thisGame);
+               phaser.x += current.x;
+               phaser.y += current.y;
+               if (payload.length > 0 && energy > 0)
+                  setTimeout(() => func(phaser, --energy), 250)
+            } catch (err) {
+               // dont crash the server
+               
+            }
          }
          func(data, 20);
       })

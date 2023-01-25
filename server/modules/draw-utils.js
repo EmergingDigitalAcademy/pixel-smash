@@ -35,11 +35,31 @@ const makeItRainbow = (game) => (
    game.loop((x, y) => game.setPixel(
       {
          x, y, state: {
-            color: game.pixels[x][y].state.color + (
+            color: (game.pixels[x][y].state.color + (
                x + y > game.width - 1
                   ? game.width - (x + y - game.width + 2)
-                  : x + y
-            )
+                  : x + y)
+            ) % game.colors
+         }
+      }
+   ))
+)
+
+const MakeItBlow = (game) => (
+   game.loop((x, y) => game.setPixel(
+      {
+         x, y, state: {
+            color: Math.floor((game.pixels[x][(y+1) % game.width].state.color*.9+(Math.random()*.1)) % game.colors)
+         }
+      }
+   ))
+)
+
+const MakeItDecay = (game) => (
+   game.loop((x, y) => game.setPixel(
+      {
+         x, y, state: {
+            color: Math.floor((game.pixels[x][y].state.color-1))
          }
       }
    ))
@@ -49,5 +69,7 @@ module.exports = {
    drawPlus,
    makeItRainbow,
    makeItSnow,
+   MakeItBlow,
+   MakeItDecay,
    resetColors,
 }
