@@ -1,6 +1,4 @@
 const crypto = require('crypto');
-const { drawPlus, makeItRainbow, makeItSnow, resetColors } = require('./draw-utils');
-const allGames = {};
 
 const GAME_STATUSES = {
    ACTIVE: 'ACTIVE',
@@ -34,97 +32,68 @@ const newGame = ({
       pixels.push(row);
    }
    return {
+      id: crypto.randomUUID(), // also used as primary key
       width, height, pixels, version, colors, physics, name,
-      id: crypto.randomUUID(),
       status: GAME_STATUSES.ACTIVE,
-      setPixel: function ({ x, y, state = {} } = {}) {
-         if (typeof (x) !== 'number' || typeof (y) !== 'number' || x === undefined || y === undefined) {
-            console.error(`Invalid attempt to update pixel, missing coords ${x} ${y}`);
-            throw `Invalid x/y coords ${x} ${y}`;
-         }
-         x = Math.max(0, x);
-         x = Math.min(height - 1, x);
-         y = Math.max(0, y);
-         y = Math.min(width - 1, y);
-
-         if (isNaN(state.color)) {
-            // reset back to empty state?
-            state.color = 0;
-         }
-
-         // ensure that pixel color remains in valid range
-         state.color = Math.max(0, state.color);
-         state.color = Math.min(colors - 1, state.color);
-
-         // set the pixel state, preserving any unmodified keys
-         this.pixels[x][y].state = {
-            ...this.pixels[x][y].state,
-            ...state,
-         }
-      },
-      print: function () {
-         const chalk = require('chalk');
-         // simple console print
-         let colors = ['bgRed', 'bgGreen', 'bgBlue', 'bgMagenta', 'bgYellow', 'bgCyan', 'bgGrey']
-         for (let x = 0; x < this.height; x++) {
-            for (let y = 0; y < this.width; y++) {
-               // console.log(this.pixels[x][y].state.color)
-               let c = this.pixels[x][y].state.color % (colors.length);
-               let currentColor = this.pixels[x][y].state.color.toString().padStart(2);
-               process.stdout.write(`${chalk[colors[c]](currentColor)}`);
-            }
-            process.stdout.write('\n');
-         }
-      },
-      // a simple loop that calls a callback function on every pixel
-      loop: function (cb) {
-         for (let x = 0; x < this.height; x++) {
-            for (let y = 0; y < this.width; y++) {
-               cb(x, y);
-            }
-         }
-      }
    }
 };
 
-// build a game and register it with the global game registry
-const initializeGame = (config) => {
-   const game = newGame(config);
-   allGames[game.id] = game;
-   return game;
+const setPixel = function (game, { x, y, state = {} } = {}) {
+   if (typeof (x) !== 'number' || typeof (y) !== 'number' || x === undefined || y === undefined) {
+      console.error(`Invalid attempt to update pixel, missing coords ${x} ${y}`);
+      throw `Invalid x/y coords ${x} ${y}`;
+   }
+   x = Math.max(0, x);
+   x = Math.min(game.height - 1, x);
+   y = Math.max(0, y);
+   y = Math.min(game.width - 1, y);
+
+   if (isNaN(state.color)) {
+      // reset back to empty state?
+      state.color = 0;
+   }
+
+   // ensure that pixel color remains in valid range
+   state.color = Math.max(0, state.color);
+   state.color = Math.min(game.colors - 1, state.color);
+
+   // set the pixel state, preserving any unmodified keys
+   game.pixels[x][y].state = {
+      ...game.pixels[x][y].state,
+      ...state,
+   }
 }
 
-const test = () => {
-   // initialize a game and draw some patterns
-   let game = newGame({ width: 5, colors: 32 });
-
-   drawPlus(game);
-   drawPlus(game);
-   game.print();
-
-   console.log('');
-   makeItSnow(game);
-   game.print();
-
-   console.log('');
-   resetColors(game);
-   makeItRainbow(game);
-   game.print();
-   console.log('');
-   makeItRainbow(game);
-   game.print();
-
-   return game;
+const printGame = function (game) {
+   const chalk = require('chalk');
+   // simple console print
+   let colors = ['bgRed', 'bgGreen', 'bgBlue', 'bgMagenta', 'bgYellow', 'bgCyan', 'bgGrey']
+   for (let x = 0; x < game.height; x++) {
+      for (let y = 0; y < game.width; y++) {
+         // console.log(game.pixels[x][y].state.color)
+         let c = game.pixels[x][y].state.color % (colors.length);
+         let currentColor = game.pixels[x][y].state.color.toString().padStart(2);
+         process.stdout.write(`${chalk[colors[c]](currentColor)}`);
+      }
+      process.stdout.write('\n');
+   }
 }
 
-// simple test for now
-if (require.main === module) {
-   test()
+// a simple loop that calls a callback function on every pixel
+const gameLoop = function (game, cb) {
+   for (let x = 0; x < game.height; x++) {
+      for (let y = 0; y < game.width; y++) {
+         cb(x, y);
+      }
+   }
 }
+
+
 
 module.exports = {
-   initializeGame,
-   GAME_STATUSES,
-   allGames,
-   test
+   newGame,
+   printGame,
+   setPixel,
+   gameLoop,
+   GAME_STATUSES
 }
