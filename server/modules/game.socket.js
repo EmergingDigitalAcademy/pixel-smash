@@ -86,13 +86,13 @@ const socketServerBuilder = (app) => {
       try {
          await pool.query(`
             UPDATE "games" SET 
-               name=$1, status=$2, physics=$3, pixels=$4
+               name=$1, status=$2, physics=$3::jsonb, pixels=$4::jsonb
             WHERE id=$5
-         `, [game.name, game.status, game.physics, game.pixels, game.id]);
-         res.sendStatus(200);
+         `, [game.name, game.status, JSON.stringify(game.physics), JSON.stringify(game.pixels), game.id]);
+         // res.sendStatus(200);
       } catch (err) {
          console.error(`Error updating game`, err);
-         res.sendStatus(500);
+         // res.sendStatus(500);
       }
    }
 
