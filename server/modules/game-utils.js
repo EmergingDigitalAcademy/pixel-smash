@@ -38,7 +38,7 @@ const newGame = ({
    }
 };
 
-const setPixel = function (game, { x, y, state = {} } = {}) {
+const setPixel = async function (game, { x, y, state = {} } = {}) {
    if (typeof (x) !== 'number' || typeof (y) !== 'number' || x === undefined || y === undefined) {
       console.error(`Invalid attempt to update pixel, missing coords ${x} ${y}`);
       throw `Invalid x/y coords ${x} ${y}`;
@@ -62,6 +62,7 @@ const setPixel = function (game, { x, y, state = {} } = {}) {
       ...game.pixels[x][y].state,
       ...state,
    }
+   return game;
 }
 
 const printGame = function (game) {

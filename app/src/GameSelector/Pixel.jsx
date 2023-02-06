@@ -1,4 +1,4 @@
-export default function Pixel({socket, pixel, gameState, scale=360, offset=100}) {
+export default function Pixel({socket, pixel, gameState, scale=360, offset=100, showState=false}) {
 
    const mouseHandler = (event) => {
       if (event.buttons > 0) {
@@ -34,7 +34,7 @@ export default function Pixel({socket, pixel, gameState, scale=360, offset=100})
             backgroundColor: `hsl(${(pixel.state.color / gameState.colors) * scale + offset}, 100%, 50%)`
          }}
       >
-         {pixel.state.color}
+         {showState && pixel.state.color}
       </div>
    )
 }

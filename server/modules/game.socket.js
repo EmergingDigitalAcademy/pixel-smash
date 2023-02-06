@@ -77,19 +77,24 @@ const socketServerBuilder = (app) => {
    });
 
    // Helper function to grab a game from the DB
-   const getGame = async (gameId) => {
-      const result = await pool.query(`SELECT * FROM "games" WHERE id=$1;`, [gameId]);
+   const getGame = async (gameId, client) => {
+      const result = await (client ? client : pool).query(`SELECT * FROM "games" WHERE id=$1;`, [gameId]);
       return result.rows[0];
    }
 
-   const getGamesWithPhysics = async () => {
-      const result = await pool.query(`SELECT * FROM "games" WHERE physics->>'interval' != 'normal';`);
+   const getGameWithLock = async (gameId, client) => {
+      const result = await (client ? client : pool).query(`SELECT * FROM "games" WHERE id=$1 FOR UPDATE;`, [gameId]);
+      return result.rows[0];
+   }
+
+   const getGamesWithPhysics = async (client) => {
+      const result = await (client ? client : pool).query(`SELECT * FROM "games" WHERE physics->>'interval' != 'normal';`);
       return result.rows;
    }
 
-   const saveGame = async (game) => {
+   const saveGame = async (game, client) => {
       try {
-         const result = await pool.query(`
+         const result = await (client ? client : pool).query(`
             UPDATE "games" SET 
                name=$1, status=$2, physics=$3::jsonb, pixels=$4::jsonb
             WHERE id=$5 RETURNING *
@@ -177,11 +182,14 @@ const socketServerBuilder = (app) => {
          }
 
          // process each pixel
+         let t0 = process.hrtime.bigint();
+         let client = await pool.connect();
          try {
-            let thisGame = await getGame(gameId);
+            let thisGame = await getGame(gameId, client);
+            // let thisGame = await getGameWithLock(gameId, client);
             for (let pixel of pixels) {
                try {
-                  setPixel(thisGame, {
+                  await setPixel(thisGame, {
                      x: pixel.x,
                      y: pixel.y,
                      state: {
@@ -195,11 +203,18 @@ const socketServerBuilder = (app) => {
             }
             // broadcast the new game state
             io.to(gameId).emit('game-state', thisGame);
-            await saveGame(thisGame);
+            await saveGame(thisGame, client);
+            client.query('COMMIT'); // commit the transaction
          } catch (err) {
             console.log(err);
             console.log(data);
+            client.query('ROLLBACK');
+         } finally {
+            client.release(); // super important, otherwise client hangs around forever
          }
+         let t1 = process.hrtime.bigint();
+         const diff = parseInt(t1 - t0) / 1000 / 1000;
+         console.log(`Took ${diff.toFixed(2)}ms`);
       })
 
       socket.on('chat', ({ from, message, to }) => {
@@ -224,6 +239,7 @@ const socketServerBuilder = (app) => {
    setInterval(async () => {
       const games = await getGamesWithPhysics();
       for (let game of games) {
+         // TODO: break these out into async promises
          switch (game.physics?.engine) {
             case 'snow':
                makeItSnow(game, game.physics.probability || .5);
@@ -245,15 +261,6 @@ const socketServerBuilder = (app) => {
 
    // Wire up the games router to the express app we received
    app.use('/game/', gameRouter);
-
-   // const newGame = initializeGame({ width: 50, height: 30, colors: 30 }); // create a single game to start with
-   // newGame.print();
-   // setInterval(() => {
-   //    makeItSnow(newGame, .01);
-   //    // makeItRainbow(newGame);
-   //    io.to(newGame.id).emit('game-state', newGame);
-   // }, 1000);
-
    return server;
 }
 
