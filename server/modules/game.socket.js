@@ -83,7 +83,7 @@ const socketServerBuilder = (app) => {
    }
 
    const getGameWithLock = async (gameId, client) => {
-      const result = await (client ? client : pool).query(`SELECT * FROM "games" WHERE id=$1 FOR UPDATE;`, [gameId]);
+      const result = await client.query(`SELECT * FROM "games" WHERE id=$1 FOR UPDATE;`, [gameId]);
       return result.rows[0];
    }
 
@@ -92,12 +92,17 @@ const socketServerBuilder = (app) => {
       return result.rows;
    }
 
+   const getGamesWithPhysicsWithLock = async (client) => {
+      const result = await client.query(`SELECT * FROM "games" WHERE physics->>'interval' != 'normal';`);
+      return result.rows;
+   }
+
    const saveGame = async (game, client) => {
       try {
-         const result = await (client ? client : pool).query(`
+         const result = await client.query(`
             UPDATE "games" SET 
                name=$1, status=$2, physics=$3::jsonb, pixels=$4::jsonb
-            WHERE id=$5 RETURNING *
+            WHERE id=$5;
          `, [game.name, game.status, JSON.stringify(game.physics), JSON.stringify(game.pixels), game.id]);
       } catch (err) {
          console.error(`Error updating game`, err);
@@ -185,8 +190,9 @@ const socketServerBuilder = (app) => {
          let t0 = process.hrtime.bigint();
          let client = await pool.connect();
          try {
-            let thisGame = await getGame(gameId, client);
-            // let thisGame = await getGameWithLock(gameId, client);
+            // let thisGame = await getGame(gameId, client);
+            await client.query('BEGIN');
+            let thisGame = await getGameWithLock(gameId, client);
             for (let pixel of pixels) {
                try {
                   await setPixel(thisGame, {
@@ -204,11 +210,12 @@ const socketServerBuilder = (app) => {
             // broadcast the new game state
             io.to(gameId).emit('game-state', thisGame);
             await saveGame(thisGame, client);
-            client.query('COMMIT'); // commit the transaction
+            // await client.query('SELECT pg_sleep(5);');
+            await client.query('COMMIT'); // commit the transaction
          } catch (err) {
             console.log(err);
             console.log(data);
-            client.query('ROLLBACK');
+            await client.query('ROLLBACK');
          } finally {
             client.release(); // super important, otherwise client hangs around forever
          }
@@ -237,27 +244,37 @@ const socketServerBuilder = (app) => {
 
    // Boot up a timer to run physics for all games
    setInterval(async () => {
-      const games = await getGamesWithPhysics();
-      for (let game of games) {
-         // TODO: break these out into async promises
-         switch (game.physics?.engine) {
-            case 'snow':
-               makeItSnow(game, game.physics.probability || .5);
-               break;
-            case 'rainbow':
-               makeItRainbow(game);
-               break;
-            case 'decay':
-               MakeItDecay(game);
-               break;
-            case 'wind':
-               MakeItBlow(game);
-               break;
-         }         
-         io.to(game.id).emit('game-state', game);
-         await saveGame(game);
+      const client = await pool.connect();
+      try {
+         await client.query('BEGIN');
+         const games = await getGamesWithPhysicsWithLock(client);
+         for (let game of games) {
+            // TODO: break these out into async promises
+            switch (game.physics?.engine) {
+               case 'snow':
+                  makeItSnow(game, game.physics.probability || .5);
+                  break;
+               case 'rainbow':
+                  makeItRainbow(game);
+                  break;
+               case 'decay':
+                  MakeItDecay(game);
+                  break;
+               case 'wind':
+                  MakeItBlow(game);
+                  break;
+            }
+            io.to(game.id).emit('game-state', game);
+            await saveGame(game, client);
+         }
+
+      } catch (e) {
+         console.log(e);
+         await client.query('ROLLBACK');
+      } finally {
+         client.release();
       }
-   }, 5000);
+   }, 1000);
 
    // Wire up the games router to the express app we received
    app.use('/game/', gameRouter);

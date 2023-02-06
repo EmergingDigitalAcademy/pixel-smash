@@ -1,7 +1,7 @@
 export default function Pixel({socket, pixel, gameState, scale=360, offset=100, showState=false}) {
 
    const mouseHandler = (event) => {
-      if (event.buttons > 0) {
+      // if (event.buttons > 0) {
          socket.emit('set-pixel', [
             {x: pixel.x, y: pixel.y, state: {color: pixel.state.color+2 % gameState.colors}},
             {x: pixel.x+1, y: pixel.y, state: {color: pixel.state.color+1 % gameState.colors}},
@@ -20,7 +20,7 @@ export default function Pixel({socket, pixel, gameState, scale=360, offset=100, 
          //    y: pixel.y,
          //    payload:[{x: 1, y: 0, color: 1}, {x: 1, y: 0, color: 1}, {x: 1, y: 0, color: 1}, {x: 1, y: 0, color: 1}]
          // })
-      }
+      // }
    }
    return (
       <div
