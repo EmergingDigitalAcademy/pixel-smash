@@ -42,6 +42,7 @@ function GamesList() {
             <button onClick={() => newGame({ physics: { engine: 'snow', probability: 0.01, interval: 2000 }, width: 50, height: 20 })}>Light Rain</button>
             <button onClick={() => newGame({ physics: { engine: 'snow', probability: 1.0, interval: 1000 }, width: 50, height: 20 })}>Chaotic</button>
             <button onClick={() => newGame({ physics: { engine: 'snow', probability: 0.1, interval: 1000 }, colors: 3, width: 50, height: 20 })}>Pixels</button>
+            <button onClick={() => newGame({ physics: { engine: 'snow', probability: 0.9, interval: 1000 }, colors: 3, width: 3, height: 3 })}>3x3</button>
 
             <ul>
                {games.map((g, i) => (

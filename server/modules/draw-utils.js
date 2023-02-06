@@ -22,18 +22,19 @@ const drawPlus = (game) => {
 }
 
 const makeItSnow = (game, probability = 1.0) => {
-   gameLoop(game, (x, y) => setPixel(game, {
-      x, y, state: {
-         color: (Math.random() < probability) ? crypto.randomInt(game.colors) : game.pixels[x][y].state.color
-      }
+   gameLoop(game, (x, y) => {
+      setPixel(game, {
+         x, y, state: {
+            color: (Math.random() < probability) ? crypto.randomInt(game.colors) : game.pixels[x][y].state.color
+         }
+      });
    })
-   )
 }
 
-const resetColors = (game) => gameLoop(game, (x,y) => setPixel(game, { x, y, state: { color: 0, owner: null}}))
+const resetColors = (game) => gameLoop(game, (x, y) => setPixel(game, { x, y, state: { color: 0, owner: null } }))
 
 const makeItRainbow = (game) => (
-   gameLoop(game, (x, y) => setPixel(game, 
+   gameLoop(game, (x, y) => setPixel(game,
       {
          x, y, state: {
             color: (game.pixels[x][y].state.color + (
@@ -50,7 +51,7 @@ const MakeItBlow = (game) => (
    gameLoop(game, (x, y) => setPixel(game,
       {
          x, y, state: {
-            color: Math.floor((game.pixels[x][(y+1) % game.width].state.color*.9+(Math.random()*.1)) % game.colors)
+            color: Math.floor((game.pixels[x][(y + 1) % game.width].state.color * .9 + (Math.random() * .1)) % game.colors)
          }
       }
    ))
@@ -60,7 +61,7 @@ const MakeItDecay = (game) => (
    gameLoop(game, (x, y) => setPixel(game,
       {
          x, y, state: {
-            color: Math.floor((game.pixels[x][y].state.color-1))
+            color: Math.floor((game.pixels[x][y].state.color - 1))
          }
       }
    ))

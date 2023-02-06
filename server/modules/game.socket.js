@@ -78,21 +78,24 @@ const socketServerBuilder = (app) => {
 
    // Helper function to grab a game from the DB
    const getGame = async (gameId) => {
-      const result = await pool.query(`SELECT * FROM "games" WHERE ID=$1;`, [gameId]);
+      const result = await pool.query(`SELECT * FROM "games" WHERE id=$1;`, [gameId]);
       return result.rows[0];
+   }
+
+   const getGamesWithPhysics = async () => {
+      const result = await pool.query(`SELECT * FROM "games" WHERE physics->>'interval' != 'normal';`);
+      return result.rows;
    }
 
    const saveGame = async (game) => {
       try {
-         await pool.query(`
+         const result = await pool.query(`
             UPDATE "games" SET 
                name=$1, status=$2, physics=$3::jsonb, pixels=$4::jsonb
-            WHERE id=$5
+            WHERE id=$5 RETURNING *
          `, [game.name, game.status, JSON.stringify(game.physics), JSON.stringify(game.pixels), game.id]);
-         // res.sendStatus(200);
       } catch (err) {
          console.error(`Error updating game`, err);
-         // res.sendStatus(500);
       }
    }
 
@@ -215,10 +218,30 @@ const socketServerBuilder = (app) => {
          printGame(getGame(gameId));
       })
 
-      // setInterval(() => {
-      //    io.emit('msg', { data: 'msg' });
-      // }, 5000);
    });
+
+   // Boot up a timer to run physics for all games
+   setInterval(async () => {
+      const games = await getGamesWithPhysics();
+      for (let game of games) {
+         switch (game.physics?.engine) {
+            case 'snow':
+               makeItSnow(game, game.physics.probability || .5);
+               break;
+            case 'rainbow':
+               makeItRainbow(game);
+               break;
+            case 'decay':
+               MakeItDecay(game);
+               break;
+            case 'wind':
+               MakeItBlow(game);
+               break;
+         }         
+         io.to(game.id).emit('game-state', game);
+         await saveGame(game);
+      }
+   }, 5000);
 
    // Wire up the games router to the express app we received
    app.use('/game/', gameRouter);

@@ -8,6 +8,12 @@ export default function Pixel({socket, pixel, gameState, scale=360, offset=100})
             {x: pixel.x-1, y: pixel.y, state: {color: pixel.state.color+1 % gameState.colors}},
             {x: pixel.x, y: pixel.y+1, state: {color: pixel.state.color+1 % gameState.colors}},
             {x: pixel.x, y: pixel.y-1, state: {color: pixel.state.color+1 % gameState.colors}},
+            {x: pixel.x+2, y: pixel.y, state: {color: pixel.state.color+1 % gameState.colors}},
+            {x: pixel.x-2, y: pixel.y, state: {color: pixel.state.color+1 % gameState.colors}},
+            {x: pixel.x, y: pixel.y+2, state: {color: pixel.state.color+1 % gameState.colors}},
+            {x: pixel.x, y: pixel.y-2, state: {color: pixel.state.color+1 % gameState.colors}},
+
+
          ]);
          // socket.emit('set-phaser', {
          //    x: pixel.x,
@@ -20,7 +26,7 @@ export default function Pixel({socket, pixel, gameState, scale=360, offset=100})
       <div
          draggable={false}
          onMouseMove={mouseHandler}
-         // onClick={mouseHandler}
+         onClick={mouseHandler}
          className={`pixel`}
          style={{
             width: `${100 / gameState.width}%`,
@@ -28,7 +34,7 @@ export default function Pixel({socket, pixel, gameState, scale=360, offset=100})
             backgroundColor: `hsl(${(pixel.state.color / gameState.colors) * scale + offset}, 100%, 50%)`
          }}
       >
-         {/* {pixel.state.color} */}
+         {pixel.state.color}
       </div>
    )
 }

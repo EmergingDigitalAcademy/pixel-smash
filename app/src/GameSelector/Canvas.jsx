@@ -94,6 +94,11 @@ function Canvas() {
             { x: rowY - 1, y: rowX, state: { color: gameState.pixels[rowY][rowX].state.color + Math.floor(Math.random()*5) % gameState.colors } },
             { x: rowY, y: rowX + 1, state: { color: gameState.pixels[rowY][rowX].state.color + Math.floor(Math.random()*5) % gameState.colors } },
             { x: rowY, y: rowX - 1, state: { color: gameState.pixels[rowY][rowX].state.color + Math.floor(Math.random()*5) % gameState.colors } },
+            { x: rowY + 2, y: rowX, state: { color: gameState.pixels[rowY][rowX].state.color + Math.floor(Math.random()*5) % gameState.colors } },
+            { x: rowY - 2, y: rowX, state: { color: gameState.pixels[rowY][rowX].state.color + Math.floor(Math.random()*5) % gameState.colors } },
+            { x: rowY, y: rowX + 2, state: { color: gameState.pixels[rowY][rowX].state.color + Math.floor(Math.random()*5) % gameState.colors } },
+            { x: rowY, y: rowX - 2, state: { color: gameState.pixels[rowY][rowX].state.color + Math.floor(Math.random()*5) % gameState.colors } },
+
          ]);
          // socket.emit('set-phaser', {
          //    x: pixel.x,
