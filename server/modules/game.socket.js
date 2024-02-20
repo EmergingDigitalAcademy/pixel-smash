@@ -4,6 +4,8 @@ const { makeItSnow, makeItRainbow, resetColors, MakeItBlow, MakeItDecay } = requ
 let { newGame, printGame, setPixel } = require('./game-utils');
 const gameRouter = require('express').Router();
 const pool = require('../modules/pool');
+const Redis = require("ioredis");
+let redisClient = new Redis(process.env.REDIS_URL);
 
 // Socket.io setup and server builder
 const socketServerBuilder = (app) => {
@@ -47,22 +49,6 @@ const socketServerBuilder = (app) => {
          res.sendStatus(500);
          return;
       }
-
-      // if (physics?.engine) {
-      //    setInterval(() => {
-      //       if (physics.engine === 'snow') {
-      //          makeItSnow(newGame, physics.probability);
-      //       } else if (physics.engine === 'rainbow') {
-      //          makeItRainbow(newGame);
-      //       } else if (physics.engine === 'wind') {
-      //          MakeItBlow(newGame);
-      //       } else if (physics.engine === 'decay') {
-      //          MakeItDecay(newGame);
-      //       }
-      //       let game = allGames[newGame.id]; // just in case reference changes
-      //       io.to(game.id).emit('game-state', newGame);
-      //    }, physics.interval || 5000)
-      // }
    });
 
    // DELETE /game/:id to delete a game by id
@@ -77,29 +63,27 @@ const socketServerBuilder = (app) => {
    });
 
    // Helper function to grab a game from the DB
-   const getGame = async (gameId, client) => {
-      const result = await (client ? client : pool).query(`SELECT * FROM "games" WHERE id=$1;`, [gameId]);
-      return result.rows[0];
+   const getGame = async (gameId) => {
+      if (await redisClient.exists(gameId)) {
+         return JSON.parse(await redisClient.get(gameId));
+      }
+      const result = await pool.query(`SELECT * FROM "games" WHERE id=$1;`, [gameId]);
+      if (result.rows.length > 0) {
+         let game = result.rows[0];
+         await redisClient.set(gameId, JSON.stringify(game), 'ex', 5);
+         return game;
+      }
    }
 
-   const getGameWithLock = async (gameId, client) => {
-      const result = await client.query(`SELECT * FROM "games" WHERE id=$1 FOR UPDATE;`, [gameId]);
-      return result.rows[0];
-   }
-
-   const getGamesWithPhysics = async (client) => {
-      const result = await (client ? client : pool).query(`SELECT * FROM "games" WHERE physics->>'interval' != 'normal';`);
+   const getGamesWithPhysics = async () => {
+      const result = await pool.query(`SELECT * FROM "games" WHERE physics->>'interval' != 'normal';`);
       return result.rows;
    }
 
-   const getGamesWithPhysicsWithLock = async (client) => {
-      const result = await client.query(`SELECT * FROM "games" WHERE physics->>'interval' != 'normal';`);
-      return result.rows;
-   }
-
-   const saveGame = async (game, client) => {
+   const saveGame = async (game) => {
       try {
-         const result = await client.query(`
+         await redisClient.set(game.id, JSON.stringify(game), 'ex', 5);
+         const result = await pool.query(`
             UPDATE "games" SET 
                name=$1, status=$2, physics=$3::jsonb, pixels=$4::jsonb
             WHERE id=$5;
@@ -188,11 +172,8 @@ const socketServerBuilder = (app) => {
 
          // process each pixel
          let t0 = process.hrtime.bigint();
-         let client = await pool.connect();
          try {
-            // let thisGame = await getGame(gameId, client);
-            await client.query('BEGIN');
-            let thisGame = await getGameWithLock(gameId, client);
+            let thisGame = await getGame(gameId);
             for (let pixel of pixels) {
                try {
                   await setPixel(thisGame, {
@@ -209,15 +190,10 @@ const socketServerBuilder = (app) => {
             }
             // broadcast the new game state
             io.to(gameId).emit('game-state', thisGame);
-            await saveGame(thisGame, client);
-            // await client.query('SELECT pg_sleep(5);');
-            await client.query('COMMIT'); // commit the transaction
+            await saveGame(thisGame);
          } catch (err) {
             console.log(err);
             console.log(data);
-            await client.query('ROLLBACK');
-         } finally {
-            client.release(); // super important, otherwise client hangs around forever
          }
          let t1 = process.hrtime.bigint();
          const diff = parseInt(t1 - t0) / 1000 / 1000;
@@ -244,12 +220,10 @@ const socketServerBuilder = (app) => {
 
    // Boot up a timer to run physics for all games
    setInterval(async () => {
-      const client = await pool.connect();
       try {
-         await client.query('BEGIN');
-         const games = await getGamesWithPhysicsWithLock(client);
+         const games = await getGamesWithPhysics();
          for (let game of games) {
-            // TODO: break these out into async promises
+            // TODO: use redis to grab the game
             switch (game.physics?.engine) {
                case 'snow':
                   makeItSnow(game, game.physics.probability || .5);
@@ -265,16 +239,13 @@ const socketServerBuilder = (app) => {
                   break;
             }
             io.to(game.id).emit('game-state', game);
-            await saveGame(game, client);
+            await saveGame(game);
          }
 
       } catch (e) {
          console.log(e);
-         await client.query('ROLLBACK');
-      } finally {
-         client.release();
       }
-   }, 1000);
+   }, 1000000);
 
    // Wire up the games router to the express app we received
    app.use('/game/', gameRouter);
